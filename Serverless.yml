@@ -2,18 +2,18 @@ service: laravel-serverless
 
 provider:
   name: aws
-  runtime: provided.al2
   region: eu-west-1
+  runtime: provided.al2
 
 plugins:
   - ./vendor/bref/bref
 
 functions:
   laravel:
-    handler: public/index.php
+    handler: index.php
     timeout: 28
     layers:
       - ${bref:layer.php-82-fpm}
-
-events:
-  - httpApi: '*'
+      - ${bref:layer.http}
+    events:
+      - httpApi: '*'
