@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker
+      # 2️⃣ Set up Docker Buildx
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
@@ -29,34 +29,41 @@ jobs:
       - name: Start Docker containers
         run: |
           docker compose up -d app nginx dynamodb minio
+          # wacht tot containers klaar zijn
           sleep 15
 
-      # 5️⃣ Install Composer dependencies (inside container)
+      # 5️⃣ Ensure APP_KEY is set
+      - name: Generate APP_KEY if missing
+        run: |
+          docker compose exec app php -r "file_exists('.env') || copy('.env.example', '.env');"
+          docker compose exec app php artisan key:generate --force
+
+      # 6️⃣ Install Composer dependencies
       - name: Install dependencies
-        run: docker compose run --rm app composer install --no-interaction --prefer-dist
+        run: docker compose exec app composer install --no-interaction --prefer-dist
 
-      # 5️⃣a Optimize Laravel
+      # 7️⃣ Optimize Laravel
       - name: Optimize Laravel
-        run: docker compose run --rm app php artisan optimize
+        run: docker compose exec app php artisan optimize
 
-      # 6️⃣ Run Laravel tests
+      # 8️⃣ Run Laravel tests
       - name: Run tests
-        run: docker compose run --rm app php artisan test
+        run: docker compose exec app php artisan test
 
-      # 7️⃣ Deploy to AWS Lambda using Bref
+      # 9️⃣ Deploy to AWS Lambda using Bref
       - name: Deploy to AWS Lambda
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
           APP_KEY: ${{ secrets.APP_KEY }}
-        run: docker compose run --rm app vendor/bin/bref deploy
+        run: docker compose exec app vendor/bin/bref deploy
 
-      # 8️⃣ Upload static assets to S3
+      # 🔟 Upload static assets to S3
       - name: Upload assets to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
         run: |
-          aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
+          docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
