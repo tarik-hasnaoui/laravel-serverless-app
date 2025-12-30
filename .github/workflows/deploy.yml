@@ -32,16 +32,16 @@ jobs:
           # Wacht tot services klaar zijn
           sleep 15
 
-      # 5️⃣ Prepare environment: .env, APP_KEY, SQLite
-      - name: Prepare Laravel environment
+      # 5️⃣ Install Composer dependencies
+      - name: Install dependencies
+        run: docker compose exec app composer install --no-interaction --prefer-dist
+
+      # 6️⃣ Prepare Laravel environment: .env, APP_KEY, SQLite
+      - name: Prepare environment
         run: |
           docker compose exec app php -r "file_exists('.env') || copy('.env.example', '.env');"
           docker compose exec app php artisan key:generate --force
           docker compose exec app php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
-
-      # 6️⃣ Install Composer dependencies
-      - name: Install dependencies
-        run: docker compose exec app composer install --no-interaction --prefer-dist
 
       # 7️⃣ Clear caches, optimize, package discover
       - name: Clear caches and optimize
@@ -55,21 +55,4 @@ jobs:
 
       # 8️⃣ Run Laravel tests
       - name: Run tests
-        run: docker compose exec app php artisan test
-
-      # 9️⃣ Deploy to AWS Lambda using Bref
-      - name: Deploy to AWS Lambda
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-          APP_KEY: ${{ secrets.APP_KEY }}
-        run: docker compose exec app vendor/bin/bref deploy
-
-      # 🔟 Upload static assets to S3
-      - name: Upload assets to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-        run: docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
+        run: docker compose exec
