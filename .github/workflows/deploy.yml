@@ -59,4 +59,22 @@ jobs:
 
       # 8️⃣ Run Laravel tests
       - name: Run tests
-        run: docker compose exec
+        run: docker compose exec app php artisan test
+
+      # 9️⃣ Deploy to AWS Lambda using Bref
+      - name: Deploy to AWS Lambda
+        env:
+         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+         AWS_REGION: ${{ env.AWS_REGION }}
+         APP_KEY: ${{ secrets.APP_KEY }}
+        run: docker compose exec app vendor/bin/bref deploy
+
+      # 🔟 Upload static assets to S3
+      - name: Upload assets to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: |
+          docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
