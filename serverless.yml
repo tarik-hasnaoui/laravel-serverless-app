@@ -1,19 +1,21 @@
 service: laravel-serverless
 
+frameworkVersion: "4"
+
 provider:
   name: aws
   region: eu-west-1
-  runtime: provided.al2
+  runtime: php-82
+  environment:
+    APP_ENV: production
+    APP_DEBUG: false
 
 plugins:
   - ./vendor/bref/bref
 
 functions:
-  laravel:
-    handler: index.php
+  web:
+    handler: public/index.php
     timeout: 28
-    layers:
-      - ${bref:layer.php-82-fpm}
-      - ${bref:layer.http}
     events:
       - httpApi: '*'

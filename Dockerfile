@@ -10,10 +10,15 @@ RUN apt-get update && apt-get install -y \
     curl \
     libcurl4-openssl-dev \
     default-mysql-client \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo_mysql mbstring zip bcmath pcntl xml fileinfo
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install Serverless CLI globally
+RUN npm install -g serverless
 
 WORKDIR /var/www
 
