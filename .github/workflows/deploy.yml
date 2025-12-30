@@ -13,68 +13,55 @@ jobs:
       S3_BUCKET: laravel-serverless-media
 
     steps:
-      # 1️⃣ Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Docker
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Build containers
       - name: Build Docker containers
         run: docker compose build
 
-      # 4️⃣ Start services
       - name: Start Docker containers
         run: |
           docker compose up -d app nginx dynamodb minio
           sleep 15
 
-      # 5️⃣ Composer install
       - name: Install dependencies
         run: docker compose exec app composer install --no-interaction --prefer-dist
 
-      # 6️⃣ Prepare Laravel environment
-      - name: Prepare Laravel environment
+      - name: Prepare environment
         run: |
           docker compose exec app php -r "file_exists('.env') || copy('.env.example', '.env');"
           docker compose exec app php artisan key:generate --force
           docker compose exec app php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
 
-      # 7️⃣ Migrate SQLite
       - name: Run migrations
         run: docker compose exec app php artisan migrate --force
 
-      # 8️⃣ Clear caches (zonder database cache errors)
-      - name: Clear caches
+      - name: Clear caches and optimize
         run: |
           docker compose exec app php artisan config:clear
+          docker compose exec app php artisan cache:clear
           docker compose exec app php artisan route:clear
           docker compose exec app php artisan view:clear
+          docker compose exec app php artisan optimize
+          docker compose exec app php artisan package:discover
 
-      # 9️⃣ Run tests
       - name: Run tests
         run: docker compose exec app php artisan test
 
-      # 🔟 Deploy to AWS Lambda (Serverless + Bref)
       - name: Deploy to AWS Lambda
-        run: |
-          docker compose exec \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_REGION=${{ env.AWS_REGION }} \
-            -e SERVERLESS_ACCESS_KEY=${{ secrets.SERVERLESS_ACCESS_KEY }} \
-            -w /var/www/html \
-            app \
-            serverless deploy --stage dev
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+        run: docker compose exec -w /var/www/html app serverless deploy --stage dev
 
-      # 1️⃣1️⃣ Upload assets to S3
       - name: Upload assets to S3
-        run: |
-          docker compose exec \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_REGION=${{ env.AWS_REGION }} \
-            app \
-            aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete

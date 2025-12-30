@@ -1,6 +1,5 @@
 FROM php:8.2-fpm
 
-# System dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -12,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     default-mysql-client \
     nodejs \
     npm \
+    awscli \
     && docker-php-ext-install pdo_mysql mbstring zip bcmath pcntl xml fileinfo
 
 # Composer
@@ -22,14 +22,11 @@ RUN npm install -g serverless
 
 WORKDIR /var/www
 
-# Copy project
 COPY . .
 
-# Storage permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
 RUN chmod -R 775 storage bootstrap/cache
 
-# Composer install zonder scripts om Docker build errors te voorkomen
 RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-scripts
 
 EXPOSE 9000
