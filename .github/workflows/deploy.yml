@@ -29,7 +29,6 @@ jobs:
       - name: Start Docker containers
         run: |
           docker compose up -d app nginx dynamodb minio
-          # wacht tot containers klaar zijn
           sleep 15
 
       # 6️⃣ Install Composer dependencies
@@ -37,8 +36,12 @@ jobs:
         run: docker compose exec app composer install --no-interaction --prefer-dist
 
       # 7️⃣ Optimize Laravel
-      - name: Optimize Laravel
-        run: docker compose exec app php artisan optimize
+      - name: Clear caches and optimize
+        run: |
+          docker compose exec app php artisan config:clear
+          docker compose exec app php artisan cache:clear
+          docker compose exec app php artisan optimize
+          docker compose exec app php artisan package:discover
 
       # 8️⃣ Run Laravel tests
       - name: Run tests
@@ -59,5 +62,4 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
-        run: |
-          docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
+        run: docker compose exec app aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete
