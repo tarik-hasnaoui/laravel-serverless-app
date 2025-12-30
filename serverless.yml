@@ -5,8 +5,7 @@ provider:
   region: eu-west-1
   runtime: provided.al2
   environment:
-    # Gebruik GitHub secret SERVERLESS_APP_KEY als APP_KEY
-    APP_KEY: ${env:SERVERLESS_APP_KEY}
+    APP_KEY: ${env:APP_KEY}
 
 plugins:
   - ./vendor/bref/bref
@@ -17,6 +16,6 @@ functions:
     timeout: 28
     layers:
       - ${bref:layer.php-82-fpm}
-      - ${bref:layer.console}   # console layer voor artisan commands
+      - ${bref:layer.console}
     events:
       - httpApi: '*'

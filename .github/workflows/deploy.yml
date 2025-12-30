@@ -55,12 +55,14 @@ jobs:
         run: docker compose exec app php artisan test
 
       - name: Deploy to AWS Lambda
-        run: |
-          docker compose exec -e SERVERLESS_ACCESS_KEY=${{ secrets.SERVERLESS_ACCESS_KEY }} \
-                                -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-                                -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-                                -e AWS_REGION=${{ env.AWS_REGION }} \
-                                -w /var/www/html app serverless deploy --stage dev
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+        run: docker compose exec -w /var/www/html app serverless deploy --stage dev
+
 
       - name: Upload assets to S3
         run: |
