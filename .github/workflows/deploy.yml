@@ -35,9 +35,13 @@ jobs:
       - name: Install dependencies
         run: docker compose run --rm app composer install --no-interaction --prefer-dist
 
-#      # 6️⃣ Run Laravel tests
-#      - name: Run tests
-#        run: docker compose run --rm app php artisan test
+      # 5️⃣a Optimize Laravel
+      - name: Optimize Laravel
+        run: docker compose run --rm app php artisan optimize
+
+      # 6️⃣ Run Laravel tests
+      - name: Run tests
+        run: docker compose run --rm app php artisan test
 
       # 7️⃣ Deploy to AWS Lambda using Bref
       - name: Deploy to AWS Lambda
