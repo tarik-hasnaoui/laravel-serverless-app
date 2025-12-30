@@ -6,6 +6,12 @@ provider:
   runtime: provided.al2
   environment:
     APP_KEY: ${ssm:/laravel-serverless/APP_KEY}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - arn:aws:ssm:eu-west-1:540649422934:parameter/laravel-serverless/APP_KEY
 
 plugins:
   - ./vendor/bref/bref
@@ -16,6 +22,6 @@ functions:
     timeout: 28
     layers:
       - ${bref:layer.php-82-fpm}
-      - ${bref:layer.console}
+      - ${bref:layer.console}   # console layer voor artisan commands
     events:
       - httpApi: '*'
