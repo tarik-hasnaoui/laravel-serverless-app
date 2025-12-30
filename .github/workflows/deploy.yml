@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: eu-west-1
-      DYNAMODB_TABLE: users
       S3_BUCKET: laravel-serverless-media
+      DYNAMODB_TABLE: users
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -22,50 +22,56 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Build Docker containers
-      - name: Build Docker images
+      # 3️⃣ Build Docker images
+      - name: Build Docker containers
         run: docker compose build
 
-      # 4️⃣ Run Laravel container to test routes
-      - name: Run Laravel container
+      # 4️⃣ Start services in background
+      - name: Start Docker containers
         run: |
           docker compose up -d app nginx dynamodb minio
-          sleep 10 # wait for containers to be ready
-          curl -f http://localhost:8080/hello
-        shell: bash
+          echo "Waiting for services to be ready..."
+          sleep 15
 
-      # 5️⃣ Run Laravel artisan tests
-      - name: Run Laravel tests
-        run: |
-          docker compose exec app php artisan test
-
-      # 6️⃣ Deploy to AWS Lambda using Bref
-      - name: Install PHP & Composer
+      # 5️⃣ Install PHP & Composer (CI environment)
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, bcmath, pdo_mysql, curl, xml, zip
 
-      - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader
+      # 6️⃣ Install Composer dependencies inside container
+      - name: Install dependencies
+        run: docker compose run --rm app composer install --no-dev --optimize-autoloader
 
-      - name: Deploy Laravel to Lambda
+      # 7️⃣ Run Laravel tests
+      - name: Run tests
+        run: docker compose run --rm app php artisan test
+
+      # 8️⃣ Run migrations and seeders
+      - name: Run database migrations
+        run: docker compose run --rm app php artisan migrate --force
+
+      - name: Seed database
+        run: docker compose run --rm app php artisan db:seed --force
+
+      # 9️⃣ Deploy Laravel to AWS Lambda via Bref
+      - name: Deploy to Lambda
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
-        run: |
-          vendor/bin/bref deploy
+          APP_KEY: ${{ secrets.APP_KEY }}
+        run: vendor/bin/bref deploy
 
-      # 7️⃣ Optional: populate S3 bucket with assets
-      - name: Upload static assets to S3
+      # 🔟 Upload static assets to S3
+      - name: Upload assets to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          S3_BUCKET: ${{ env.S3_BUCKET }}
         run: |
-          aws s3 sync public/ s3://${{ env.S3_BUCKET }}/ --delete \
-            --endpoint-url https://s3.${{ env.AWS_REGION }}.amazonaws.com
-          echo "Assets uploaded"
-
-      # 8️⃣ Optional: Run DynamoDB migrations/seeds
-      - name: Run DynamoDB migrations/seeds
-        run: |
-          docker compose exec app php artisan migrate --force
-          docker compose exec app php artisan db:seed --force
+          aws s3 sync public/ s3://$S3_BUCKET/ --delete \
+            --endpoint-url https://s3.$AWS_REGION.amazonaws.com
+          echo "Static assets uploaded."
