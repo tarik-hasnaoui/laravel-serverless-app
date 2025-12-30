@@ -68,7 +68,7 @@ jobs:
          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
          AWS_REGION: ${{ env.AWS_REGION }}
          APP_KEY: ${{ secrets.APP_KEY }}
-        run: docker compose exec -w /var/www/html app ./vendor/bin/bref deploy
+        run: docker compose exec -w /var/www/html app ./vendor/bin/bref cli deploy
 
       # 🔟 Upload static assets to S3
       - name: Upload assets to S3
