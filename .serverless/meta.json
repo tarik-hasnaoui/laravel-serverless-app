@@ -1,0 +1,73 @@
+{
+  "/var/www/html/serverless.yml": {
+    "versionFramework": "4.29.3",
+    "servicePath": "/var/www/html/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "laravel-serverless",
+      "provider": {
+        "name": "aws",
+        "region": "eu-west-1",
+        "runtime": "provided.al2",
+        "environment": {
+          "APP_KEY": "${env:SERVERLESS_APP_KEY}"
+        }
+      },
+      "plugins": [
+        "./vendor/bref/bref"
+      ],
+      "functions": {
+        "web": {
+          "handler": "index.php",
+          "timeout": 28,
+          "layers": [
+            "${bref:layer.php-82-fpm}",
+            "${bref:layer.console}"
+          ],
+          "events": [
+            {
+              "httpApi": "*"
+            }
+          ]
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "region": "eu-west-1",
+      "runtime": "provided.al2",
+      "environment": {
+        "APP_KEY": "${env:SERVERLESS_APP_KEY}"
+      }
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": true,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "Cannot resolve '${env:SERVERLESS_APP_KEY}' variable at 'provider.environment.APP_KEY'. No value is available for this variable, and no default value was provided. Please check your variable definitions or provide a default value.",
+      "stack": "Error: Cannot resolve '${env:SERVERLESS_APP_KEY}' variable at 'provider.environment.APP_KEY'. No value is available for this variable, and no default value was provided. Please check your variable definitions or provide a default value.\n    at _ResolverManager.resolve (file:///root/.serverless/releases/4.29.3/package/dist/sf-core.js:684:32303)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async #handlePlaceholderNode (file:///root/.serverless/releases/4.29.3/package/dist/sf-core.js:684:30487)\n    at async file:///root/.serverless/releases/4.29.3/package/dist/sf-core.js:684:28332\n    at async processNodeAndHandleCompletion (file:///root/.serverless/releases/4.29.3/package/dist/sf-core.js:684:16734)",
+      "code": "MISSING_VARIABLE_RESULT"
+    },
+    "serviceRawFile": "service: laravel-serverless\n\nprovider:\n  name: aws\n  region: eu-west-1\n  runtime: provided.al2\n  environment:\n    # Gebruik GitHub secret SERVERLESS_APP_KEY als APP_KEY\n    APP_KEY: ${env:SERVERLESS_APP_KEY}\n\nplugins:\n  - ./vendor/bref/bref\n\nfunctions:\n  web:\n    handler: index.php\n    timeout: 28\n    layers:\n      - ${bref:layer.php-82-fpm}\n      - ${bref:layer.console}   # console layer voor artisan commands\n    events:\n      - httpApi: '*'\n",
+    "command": [
+      "deploy"
+    ],
+    "options": {
+      "stage": "dev"
+    },
+    "orgId": "78faa3f6-6005-4554-85bc-83411b26ca29",
+    "orgName": "hva2026",
+    "userId": null,
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}
