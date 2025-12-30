@@ -5,13 +5,8 @@ provider:
   region: eu-west-1
   runtime: provided.al2
   environment:
-    APP_KEY: ${ssm:/laravel-serverless/APP_KEY}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - ssm:GetParameter
-      Resource:
-        - arn:aws:ssm:eu-west-1:540649422934:parameter/laravel-serverless/APP_KEY
+    # Gebruik GitHub secret SERVERLESS_APP_KEY als APP_KEY
+    APP_KEY: ${env:SERVERLESS_APP_KEY}
 
 plugins:
   - ./vendor/bref/bref
