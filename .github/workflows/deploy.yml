@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: docker compose exec app composer install --no-interaction --prefer-dist
 
+      # 7️⃣ Run migrations
+      - name: Run migrations
+        run: docker compose exec app php artisan migrate --force
+
       # 6️⃣ Prepare Laravel environment: .env, APP_KEY, SQLite
       - name: Prepare environment
         run: |
