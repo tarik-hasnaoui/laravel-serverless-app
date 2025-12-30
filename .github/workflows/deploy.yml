@@ -29,17 +29,27 @@ jobs:
       - name: Start Docker containers
         run: |
           docker compose up -d app nginx dynamodb minio
+          # Wacht tot services klaar zijn
           sleep 15
+
+      # 5️⃣ Prepare environment: .env, APP_KEY, SQLite
+      - name: Prepare Laravel environment
+        run: |
+          docker compose exec app php -r "file_exists('.env') || copy('.env.example', '.env');"
+          docker compose exec app php artisan key:generate --force
+          docker compose exec app php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
 
       # 6️⃣ Install Composer dependencies
       - name: Install dependencies
         run: docker compose exec app composer install --no-interaction --prefer-dist
 
-      # 7️⃣ Optimize Laravel
+      # 7️⃣ Clear caches, optimize, package discover
       - name: Clear caches and optimize
         run: |
           docker compose exec app php artisan config:clear
           docker compose exec app php artisan cache:clear
+          docker compose exec app php artisan route:clear
+          docker compose exec app php artisan view:clear
           docker compose exec app php artisan optimize
           docker compose exec app php artisan package:discover
 
